@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>LinkShortener</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <link rel="stylesheet" th:href="@{/bootstrap/css/bootstrap.min.css}">
+</head>
+<body>
+<label for="locale">
+    Messages Locale:
+</label>
+<form th:action="@{/set-locale}" method="post" id="localeForm">
+    <select id="locale" name="locale" onchange="this.form.submit()">
+        <option value="en" th:selected="${currentLocale.language == 'en'}">English</option>
+        <option value="pl" th:selected="${currentLocale.language == 'pl'}">Polish</option>
+        <option value="de" th:selected="${currentLocale.language == 'de'}">German</option>
+    </select>
+</form>
+
+<div th:if="${success}" class="alert alert-success" role="alert" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:utext="${error}"></div>
+<div class="container mt-6">
+    <div class="row">
+        <div class="col-4">
+            <div class="card">
+                <div class="card-header">
+                    Create Link
+                </div>
+                <div class="card-body bg-light">
+                    <form th:action="@{/links/create}" th:object="${newLink}" method="post" class="mb-3">
+                        <div class="col">
+                            <div class="row-6">
+                                <label>
+                                    Name:
+                                    <input type="text" th:field="*{name}" class="form-control"/>
+                                </label>
+                            </div>
+                            <div class="row-6">
+                                <label>
+                                    Target URL:
+                                    <input type="text" th:field="*{targetUrl}" class="form-control"/>
+                                </label>
+                            </div>
+                            <div class="row-6">
+                                <label>
+                                    Password(optional):
+                                    <input type="password" th:field="*{password}" class="form-control"/>
+                                </label>
+                            </div>
+                            <div class="row-6">
+                                <input type="submit" value="Create" class="btn btn-primary mt-2"/>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div th:if="${created_link}" class="created-link">
+                        <p>Created Link:</p>
+                        <p>ID: <span th:text="${created_link.id}"></span></p>
+                        <p>Name: <span th:text="${created_link.name}"></span></p>
+                        <p>Target URL: <span th:text="${created_link.targetUrl}"></span></p>
+                        <p>Redirect URL: <span th:text="${created_link.redirectUrl}"></span></p>
+                        <p>Visits: <span th:text="${created_link.visits}"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card">
+                <div class="card-header">
+                    Search Link
+                </div>
+                <div class="card-body bg-light">
+                    <form th:action="@{/links/search}" method="get" class="mb-3">
+                        <div class="col">
+                            <div class="row-6">
+                                <label>
+                                    Name:
+                                    <input type="text" name="name" class="form-control"/>
+                                </label>
+                            </div>
+                            <div class="row-6">
+                                <label>
+                                    Password:
+                                    <input type="password" name="password" class="form-control"/>
+                                </label>
+                            </div>
+                            <div class="row-6">
+                                <input type="submit" value="Search" class="btn btn-primary mt-2"/>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div th:if="${searched_link}" class="searched-link">
+                        <p>Searched Link:</p>
+                        <p>ID: <span th:text="${searched_link.id}"></span></p>
+                        <p>Name: <span th:text="${searched_link.name}"></span></p>
+                        <p>Target URL: <span th:text="${searched_link.targetUrl}"></span></p>
+                        <p>Redirect URL: <span th:text="${searched_link.redirectUrl}"></span></p>
+                        <p>Visits: <span th:text="${searched_link.visits}"></span></p>
+
+
+                        <button id="editButton" class="btn btn-primary mt-2">Edit</button>
+                        <button id="deleteButton" class="btn btn-danger mt-2" th:data-id="${searched_link.id}">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card" style="display: none;" id="editCard">
+                <div class="card-header">
+                    Edit Link
+                </div>
+                <div th:if="${searched_link}" class="card-body bg-light">
+                    <form th:action="@{/links/edit}" method="post" onsubmit="return confirm('Are you sure you want to edit this link?');" class="mb-3">
+                        <div class="row-6">
+                            <label>
+                                New Name:
+                                <input type="text" name="name" th:value="${searched_link.name}" class="form-control"/>
+                            </label>
+                        </div>
+                        <div class="row-6">
+                            <label>
+                                New Target URL:
+                                <input type="text" name="redirectUrl" th:value="${searched_link.redirectUrl}" placeholder="Redirect URL" class="form-control"/>
+                            </label>
+                        </div>
+                        <div class="row-6">
+                            <label>
+                                New Password:
+                                <input type="text" name="password" th:value="${password}" class="form-control"/>
+                            </label>
+                        </div>
+                        <input type="hidden" name="id" th:value="${searched_link.id}"/>
+                        <div class="row-6">
+                            <input type="submit" value="Edit" class="btn btn-primary mt-2"/>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{../static/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script>
+    document.getElementById('editButton').addEventListener('click', function() {
+        let editCard = document.getElementById('editCard');
+        let editButton = document.getElementById('editButton');
+        if (editCard.style.display !== 'block') {
+            editCard.style.display = 'block';
+            editButton.innerText = 'Cancel';
+            editButton.classList.remove('btn-primary');
+            editButton.classList.add('btn-warning');
+        } else {
+            editCard.style.display = 'none';
+            editButton.innerText = 'Edit';
+            editButton.classList.remove('btn-warning');
+            editButton.classList.add('btn-primary');
+        }
+    });
+
+    document.getElementById('deleteButton').addEventListener('click', function() {
+        if (!confirm('Are you sure you want to delete this link?')) {
+            return;
+        }
+
+        let id = this.getAttribute('data-id');
+
+        fetch('/links/delete/' + id, {
+            method: 'DELETE',
+        })
+            .then(response => {
+                location.reload()
+            })
+            .catch(error => {
+                console.error('error occurred when tried to delete', error);
+            });
+    });
+</script>
+</body>
+</html>
